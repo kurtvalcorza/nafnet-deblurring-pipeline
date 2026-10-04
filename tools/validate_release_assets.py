@@ -126,7 +126,7 @@ RUNNER_MARKERS = (
     "byod = read_byod(source)",
     "splits = split_by_source(byod[\"records\"], seed=SPLIT_SEED)",
     "write_metrics_csv(out / \"byod_test_metrics.csv\", reports)",
-    'run.write_output("byod/byod_result.json"',
+    'result_name = f"byod/{out.name}/byod_result.json"',
     "error_file.write_text(json.dumps(",
     'print(f"STAGE FAILED ({options.stage}): {type(exc).__name__}: {message}", flush=True)',
 )

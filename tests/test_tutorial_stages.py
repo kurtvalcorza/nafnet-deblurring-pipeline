@@ -160,17 +160,19 @@ def test_every_stage_runs_in_order_and_hands_off_through_files(stages, tmp_path:
             handle.writestr(f"sharp/{r['id']}.png", _png(r["sharp"]))
             handle.writestr(f"blurred/{r['id']}.png", _png(r["blurred"]))
     _run(stages, "byod", "--byod", str(archive), "--steps", "2", "--batch-size", "2")
-    byod = json.loads((out / "byod" / "byod_result.json").read_text())
+    paired_dir = next((out / "byod").glob("paired-*"))
+    byod = json.loads((paired_dir / "byod_result.json").read_text())
     assert byod["mode"] == "paired" and byod["reload_parity"]["max_abs_float_diff"] <= stages.RELOAD_TOLERANCE
     assert set(byod["reports"]) == {"identity", "unsharp", "pretrained", "adapted"}  # no oracle without kernels
-    assert (out / "byod" / "byod_test_metrics.csv").exists() and (out / "byod" / "artifact" / "manifest.json").exists()
+    assert (paired_dir / "byod_test_metrics.csv").exists() and (paired_dir / "artifact" / "manifest.json").exists()
 
     # BYOD unpaired: inference only, no metric
     unpaired = tmp_path / "blurred.zip"
     with zipfile.ZipFile(unpaired, "w") as handle:
         handle.writestr("blurred/a.png", _png(synthetic_image(side=70)))
     _run(stages, "byod", "--byod", str(unpaired))
-    byod = json.loads((out / "byod" / "byod_result.json").read_text())
+    byod = json.loads(next((out / "byod").glob("unpaired-*/byod_result.json")).read_text())
+    assert paired_dir.exists(), "a second BYOD run must not remove the first run's results"
     assert byod["mode"] == "unpaired" and "psnr" not in json.dumps(byod["predictions"]) and byod["adapted_model"] == "canonical sample artifact"
 
     # BYOD refusal: an unmatched file stops the stage with an actionable message (DAT19)

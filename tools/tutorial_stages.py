@@ -485,10 +485,12 @@ def stage_byod(run: Run) -> None:
     source = Path(run.options.byod)
     byod = read_byod(source)
     print({"byod_mode": byod["mode"], "records": len(byod["records"]), "validation": {k: byod["validation"][k] for k in ("records", "sources", "width_range", "height_range")}, "conversions": byod["conversions"][:10], "ignored_files": byod["ignored_files"][:10]}, flush=True)
-    out = run.out / "byod"
+    # one directory per archive, so a second BYOD run never overwrites or mixes with an earlier one
+    out = run.out / "byod" / f"{byod['mode']}-{byod['archive_digest'][:12]}"
     if out.exists():
         shutil.rmtree(out)
-    out.mkdir()
+    out.mkdir(parents=True)
+    result_name = f"byod/{out.name}/byod_result.json"
     pretrained = load_base(run, "byod")
     result: dict[str, Any] = {"mode": byod["mode"], "archive_digest": byod["archive_digest"], "validation": byod["validation"], "conversions": byod["conversions"]}
     if byod["mode"] == "unpaired":
@@ -509,7 +511,7 @@ def stage_byod(run: Run) -> None:
             print(row, flush=True)
             rows.append(row)
         result.update({"predictions": rows, "note": "unpaired images have no reference: no PSNR/SSIM is computed; the gradient-energy ratio is a sharpness proxy, not a quality score", "adapted_model": "canonical sample artifact" if adapted is not None else "none (run Section 6 first to include it)"})
-        run.write_output("byod/byod_result.json", result)
+        run.write_output(result_name, result)
         print({"byod_outputs": sorted(p.name for p in out.iterdir())}, flush=True)
         return
     splits = split_by_source(byod["records"], seed=SPLIT_SEED)
@@ -525,8 +527,7 @@ def stage_byod(run: Run) -> None:
     parity = reload_parity(reloaded, splits["test"], reference)
     outputs = reloaded.restore([r["blurred"] for r in splits["test"]])
     reports = {**base["reports"], "adapted": score(outputs, splits["test"], method="adapted")}
-    for report in reports.values():
-        print(summary(report), flush=True)
+    print(summary(reports["adapted"]), flush=True)
     gains = {"adapted_vs_pretrained": paired_difference(reports["pretrained"], reports["adapted"]), "adapted_vs_identity": paired_difference(reports["identity"], reports["adapted"])}
     print({k: rounded(v, 3) for k, v in gains.items()}, flush=True)
     print({"reload_parity": rounded(parity, 8)}, flush=True)
@@ -534,7 +535,7 @@ def stage_byod(run: Run) -> None:
         save_png(restored, out / f"{record['id']}_adapted.png")
     write_metrics_csv(out / "byod_test_metrics.csv", reports)
     result.update({"split": {k: [r["id"] for r in v] for k, v in splits.items()}, "dataset_digest": manifest["digest"], "tuning": base["tuning"], "adaptation": adaptation, "artifact": {"dir": str(artifact_dir), "weights_sha256": artifact["weights"]["sha256"]}, "reports": reports, "paired_gains": gains, "reload_parity": parity, "definitions": METRIC_DEFINITIONS})
-    run.write_output("byod/byod_result.json", json.loads(json.dumps(result, default=lambda o: o.tolist() if isinstance(o, np.ndarray) else str(o))))
+    run.write_output(result_name, json.loads(json.dumps(result, default=lambda o: o.tolist() if isinstance(o, np.ndarray) else str(o))))
     print({"byod_outputs": sorted(p.name for p in out.iterdir())}, flush=True)
 
 
