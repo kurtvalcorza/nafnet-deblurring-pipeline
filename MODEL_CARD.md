@@ -154,7 +154,17 @@ The comparison is always against baselines on the same pairs: `identity` (the bl
 
 For an unpaired image no reference exists, and the pipeline reports no performance measure. It reports only `gradient_energy_ratio_*`, a sharpness proxy that noise and ringing also raise. A caller who wants a measure for real blur must supply paired captures of the same scene, or a validated no-reference metric or human rating, none of which this pipeline provides.
 
-No measured values for the real checkpoint are stated in this card, because no run with the real checkpoint has been recorded (see Verification records). The GoPro test results in the upstream README are the authors' report and are not reproduced or relied on here.
+Measured in one Google Colab T4 run of the tutorial with the real checkpoint (12 synthetic motion-blur test pairs from 3 public-domain photographs, one seed; see Verification records):
+
+| Method | `psnr` (dB) | `ssim` |
+|---|---|---|
+| `identity` (blurred input) | 23.32 | 0.6264 |
+| `unsharp` | 23.37 | 0.6186 |
+| `wiener_oracle` | 25.18 | 0.7134 |
+| `pretrained` | 26.13 | 0.7711 |
+| `adapted` (300 steps, decoder scope) | 26.36 | 0.7881 |
+
+The pretrained model improved PSNR on 11 of 12 pairs (mean +2.81 dB); adaptation added a mean +0.23 dB over the pretrained model (min −0.17, max +0.42). These are tutorial-sample values on synthetic blur, not benchmark results. The GoPro test results in the upstream README are the authors' report and are not reproduced or relied on here.
 
 ###### Decision thresholds
 
@@ -244,7 +254,7 @@ Beyond the out-of-scope uses above, the developers consider these uses unaccepta
 | Upstream revision | `2b4af71ebe098a92a75910c233a3965a3e93ede4` |
 | Checkpoint | `NAFNet-GoPro-width32.pth`, 68,671,121 bytes, SHA-256 `19394e6155d12ef6371d1d57496f87f0ec88f92bdffa27c0792690722d5d1a5c` |
 | Digest provenance | stated for the authors' Google Drive file (id `1Fr2QadtDCEXg6iwWX8OzeZLbHOx2t5Bj`) by two independent third-party projects; not computed by this repository; see `docs/WEIGHTS.md` |
-| Distribution | public Hugging Face mirrors `nyanko7/nafnet-models`, then `mikestealth/nafnet-models`, addressed by branch and accepted only at the pinned digest; not yet confirmed to serve the pinned bytes |
+| Distribution | public Hugging Face mirrors `nyanko7/nafnet-models`, then `mikestealth/nafnet-models`, addressed by branch and accepted only at the pinned digest; the first mirror served the pinned bytes in the Colab run of 2026-10-04 |
 | Architecture source | `NAFNet_arch.py` `01b22270cc93f1bb90c0e3e4490e98b023fcf73f8552860b4a9ee880ce5c6967`, `arch_util.py` `5a11af2e7c2d7a7b57c1fbd7e19cf0a50b4b4e8c7ae7dd203a915d7a707e7005`, `local_arch.py` `c4df2ba4d896442a0f6ec984accd6e68f31edce3afdf066add202c25a0d1af26` (SHA-256, verbatim at the upstream revision) |
 | Converted serving file | `model.safetensors`, derived from the checkpoint; SHA-256 recorded per run in `outputs/weights.json`, not yet pinned |
 | Manifest | `weights/nafnet-gopro-width32/dimer-base-manifest.json` |
@@ -264,6 +274,13 @@ Beyond the out-of-scope uses above, the developers consider these uses unaccepta
 ## Verification records
 
 The tutorial is a release candidate. A static check (tests, validator, notebook parity) is not an execution and is not listed here.
+
+- **Date:** 2026-10-04
+- **Subject:** `tutorials/nafnet_deblurring_colab.ipynb`, blob `a628881` (carried files of commit `31db8bb`)
+- **Runtime:** fresh Google Colab runtime with a Tesla T4; kernel Python 3.13.15; stage environment Python 3.12.12 managed by `uv`, `torch 2.14.0+cu130`, `numpy 2.5.3`, `safetensors 0.8.0`
+- **Procedure:** `Run all` with no field edited
+- **Observed result:** all 11 code cells completed in one pass with no error or restart; the checkpoint was fetched from the first mirror and matched the pinned SHA-256; the conversion was exact; the test values are those in `Performance Measures`; the reloaded artifact reproduced the trained model's outputs with `max_abs_float_diff 0.0`. The executed copy is in `docs/execution-evidence/2026-10-04/`
+- **Caveats:** one seeded run; the optional activity and the bring-your-own-data branch were not run on the hosted runtime
 
 - **Date:** 2026-10-04
 - **Subject:** `tutorials/nafnet_deblurring_colab.ipynb` at commit `31db8bb`

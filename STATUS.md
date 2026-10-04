@@ -5,11 +5,10 @@ Current status: **Candidate** — initial development. The `E2E` / `GUIDED` tuto
 What has been executed and what has not is recorded in `docs/release-verification.md`. In short:
 
 - **Executed (CPU, development container):** every infrastructure and learner cell of the committed notebook (commit `31db8bb`), top to bottom in one kernel, including the optional activity and the paired BYOD branch, plus the unpaired and refused BYOD archives with the runner of `227730f`. The isolated environment was replaced by an equivalent pinned environment and the checkpoint by a random-init full-width stand-in, because the container cannot reach `huggingface.co` and had too little free disk for the CUDA build of torch. This exercises the stage plumbing, validation and refusals, baselines, fine-tuning, artifact export, fresh reload and new-image inference; it says nothing about the pretrained model's quality. The lock was also resolved with the pinned `uv` 0.12.15 against a managed CPython 3.12.12 (`--dry-run --require-hashes`, 38 packages).
-- **Not yet executed:** a hosted `Run all` (Colab or Kaggle T4) of the current revision with the real checkpoint; the confirmation that the Hugging Face mirror serves bytes matching the pinned SHA-256; the hosted REL12 BYOD journey; the pinning of the converted safetensors digest.
+- **Executed (Google Colab T4, 2026-10-04):** a one-pass default `Run all` of blob `a628881` with the real checkpoint. The first Hugging Face mirror served the pinned bytes (`fetched_on_this_run: True`, SHA-256 verified); the conversion was exact; test PSNR / SSIM `pretrained` 26.13 dB / 0.7711 and `adapted` 26.36 dB / 0.7881 against `identity` 23.32 / 0.6264 and `wiener_oracle` 25.18 / 0.7134; reload parity `0.0`.
+- **Not yet executed:** the hosted REL12 BYOD journey; the pinning of the converted safetensors digest recorded by that run.
 
 Open items before promotion:
 
-1. Record one-pass hosted `Run all` evidence for the current revision (RUN1, REL1–REL7), including `fetched_on_this_run: True` with the pinned digest in Section 3.
-2. Pin the SHA-256 of the converted `model.safetensors` recorded by that run.
-3. Record the REL12 BYOD journey on a hosted runtime (one paired archive, one unpaired archive, one refused archive).
-4. Replace the timing estimates in the notebook prerequisites with measured hosted timings.
+1. Pin the SHA-256 of the converted `model.safetensors` recorded by the Colab run (`768444b5…2ef0`, 68,510,388 bytes) and replace the timing estimates in the notebook prerequisites with the measured hosted timings. Both change the notebook, so the default `Run all` must then be repeated on the new blob.
+2. Record the REL12 BYOD journey on a hosted runtime (one paired archive, one unpaired archive, one refused archive), on the same revision as item 1.

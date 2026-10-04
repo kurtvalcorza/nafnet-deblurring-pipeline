@@ -28,6 +28,22 @@ None of this is execution evidence for the real checkpoint (REL8).
 
 ## Recorded executions
 
+### 2026-10-04 — Google Colab T4, default `Run all` with the real checkpoint
+
+- **Date:** 2026-10-04
+- **Subject:** `tutorials/nafnet_deblurring_colab.ipynb`, blob `a62888122407ee450e0256db60658e8161ee68b9` (branch `ccr-24656dfc-ax1ln2` at `886e6a1`; carried files of `31db8bb`). Every source cell of the executed copy is byte-identical to that blob. The executed copy is `docs/execution-evidence/2026-10-04/nafnet_deblurring_colab_a628881_colab-t4.ipynb`, summarised in `colab_t4_run_summary.json` beside it.
+- **Runtime:** fresh Google Colab runtime, Tesla T4 (15,360 MiB), kernel CPython 3.13.15. Stage environment built by the notebook: CPython 3.12.12 managed by `uv`, the 38-package lock, `torch 2.14.0+cu130` with CUDA, `numpy 2.5.3`, `safetensors 0.8.0`; built in 66 s.
+- **Procedure:** `Run all` with no field edited (`STEPS = 300`, `RUN_ACTIVITY = False`, `USE_BYOD = False`).
+- **Observed result:** all 11 code cells completed in one pass, in execution order 1–11, with no error, restart, credential or upload dialog.
+  - Section 3: the checkpoint was downloaded from `https://huggingface.co/nyanko7/nafnet-models/resolve/main/NAFNet-GoPro-width32.pth` with `fetched_on_this_run: True` and `checkpoint_verified: True` at the pinned 68,671,121 bytes and SHA-256 `19394e61…1a5c`. This confirms that the first mirror serves the pinned bytes. Converted `model.safetensors`: 68,510,388 bytes, SHA-256 `768444b5d1dde023b21564a541e3aeeac1c7c084ce9b91a8c0408709b05c2ef0`, 664 tensors, 17,111,907 parameters, `max_abs_output_diff_vs_pth: 0.0` (13.5 s).
+  - Section 4: 48 training / 12 test pairs, disjoint photographs; all five refusal probes rejected (6.2 s).
+  - Section 5: test PSNR / SSIM — `identity` 23.32 dB / 0.6264, `unsharp` 23.37 / 0.6186, `wiener_oracle` 25.18 / 0.7134, `pretrained` 26.13 / 0.7711; pretrained beat the blurred input by +2.81 dB on average (min −0.24, max +4.48), on 11 of 12 pairs (22.3 s).
+  - Section 6: `decoder` scope, 1,322,307 trainable / 15,789,600 frozen parameters, 300 steps on CUDA in 54.9 s (about 0.18 s per step); training-batch PSNR 25.66 dB at step 25 and 27.20 dB at step 300; artifact weights SHA-256 `8d849baf…e969` (70.8 s for the stage).
+  - Section 7: `adapted` 26.36 dB / 0.7881; `adapted_vs_pretrained` +0.23 dB mean (min −0.17, max +0.42), 11 of 12 pairs improved; `adapted_vs_wiener_oracle` +1.18 dB; per test photograph, `astronaut` 25.69 → 26.02, `gravel` 23.59 → 23.81, `rocket` 29.11 → 29.25 dB (12.3 s).
+  - Section 8: artifact manifest verified before loading; `reload_parity` `max_abs_float_diff 0.0`, `uint8_equal_fraction 1.0`; `text-synthetic` PSNR input 25.35, pretrained 30.91, adapted 31.29 dB; `clock-real-motion` gradient-energy ratio 1.081 pretrained, 0.807 adapted (no reference, no score) (11.3 s).
+- **Caveats:** one seeded run on one 12-pair test split, so the +0.23 dB adaptation gain is small and may not survive another seed or other photographs. The optional activity and the BYOD branch were not run, so the hosted REL12 BYOD journey is still open. GPU results are not expected to equal CPU results exactly.
+
+
 ### 2026-10-04 — local CPU execution of the committed notebook at `31db8bb` (not a hosted Run all)
 
 - **Date:** 2026-10-04
