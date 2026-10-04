@@ -22,7 +22,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import platform
 import sys
 import time
@@ -534,4 +533,4 @@ class DeblurPipeline:
 def default_device() -> str:
     import torch
 
-    return "cuda" if torch.cuda.is_available() and os.environ.get("DIMER_FORCE_CPU") != "1" else "cpu"
+    return "cuda" if torch.cuda.is_available() else "cpu"

@@ -450,7 +450,7 @@ TEMPLATE = {
         },
         {
             "md": (
-                "**What to notice:** a table with six rows (identity, unsharp, wiener_oracle, pretrained, adapted) and `adapted_vs_pretrained`, "
+                "**What to notice:** a table with five rows (identity, unsharp, wiener_oracle, pretrained, adapted) and `adapted_vs_pretrained`, "
                 "the principal result: its mean, its range and how many of the 12 pairs improved. Compare the pretrained and adapted columns of the "
                 "sheet: differences are often subtle at this size, so look at fine texture and straight edges. The full record is "
                 "`outputs/{stem}_evaluation_report.json` and the per-pair table `outputs/{stem}_test_metrics.csv` in the run directory.\n\n"
@@ -615,6 +615,7 @@ TEMPLATE = {
                 "| `Carried file integrity failure` in Section 2, or `carried upstream file … sha256 … != pinned` in a stage | a carried file was edited | Do not edit the infrastructure cells; open a fresh copy of the notebook from the repository. |\n"
                 "| `uv 0.12.15 wheel size/hash mismatch`, or a `URLError` / timeout while downloading it | a network failure or an unexpected response from PyPI | Re-run the Section 2 install cell. Never replace the pinned URL or digest. |\n"
                 "| `CalledProcessError` from `uv venv` or `uv pip install` (a hash mismatch, `Failed to download`, HTTP 5xx) | a transient PyPI or network failure | Re-run the Section 2 install cell: `uv` reuses what it already downloaded. If a hash mismatch repeats, stop and report it — never remove `--require-hashes`, a pin or a hash. |\n"
+                "| `DeprecationWarning: 'saved_variables' is deprecated; use 'saved_tensors'` in a stage log | the carried upstream `arch_util.py` uses an older PyTorch name that still works in torch 2.14 | Nothing: the warning is harmless and the carried file is kept verbatim on purpose. |\n"
                 "| `RuntimeError: Stage '…' failed (exit 2): …` | the stage raised an error; the text after the colon is the stage's own message, and its full log is printed above and kept in the run directory's `logs/` | Find the message in the rows below. A stage reads only files, so after fixing the cause you can re-run that cell and the cells after it. |\n"
                 "| `no mirror delivered the pinned checkpoint bytes` | the mirrors were unreachable, or served different bytes | Re-run the Section 3 cell later. If the message shows a different SHA-256, the mirror changed: the notebook correctly refuses it; report it rather than editing the digest. |\n"
                 "| `… is missing: run the stage that writes it before …` | a learner cell was run before an earlier stage | Run the notebook from the top, or re-run the earlier cells in order. |\n"

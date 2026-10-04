@@ -110,7 +110,7 @@ Restoration quality varies with the content of the image, the kind and strength 
 
 The pipeline is not human-centric: it operates on pixels and has no notion of who or what is pictured. The evaluation data contains one portrait (the public-domain `astronaut` photograph) among three test photographs; no group-level analysis was possible or attempted.
 
-The upstream training corpus, GoPro, consists of handheld video frames of street and indoor scenes that may include people. The authors did not publish a demographic audit of it, and none was performed here. Whether restoration quality differs across skin tones, faces or other human attributes is therefore unknown. An operator who applies the model to photographs of people should evaluate restoration error on paired data that represents the people in their own application, separately per group of interest, before relying on it.
+The upstream training corpus, GoPro, consists of handheld video frames of street and indoor scenes that may include people. The authors did not publish a demographic audit of it, and none was performed here. Whether restoration quality differs across skin tones, faces or other human attributes is therefore unknown. An operator who applies the model to photographs of people should first evaluate restoration error on paired data that represents the people in their own application. That evaluation should report the error separately for each group of interest.
 
 ###### Instrumentation
 
@@ -118,7 +118,7 @@ The checkpoint was trained on GoPro, whose blurred images were made by averaging
 
 The sample in this repository is produced by software, not a camera. Sharp photographs from the `scikit-image` 0.26.0 data directory, from various cameras and sources, are convolved with straight-line motion kernels 9..21 px long at random angles. Gaussian noise of sigma 0.01 is added, and the result is quantised to 8 bits. There is no camera response curve, no demosaicing and no compression. Four of the nine sample photographs used for training and test (`brick`, `grass`, `camera`, `gravel`) are greyscale and are replicated to three identical channels.
 
-Instrument effects reach the model directly as pixel error. A different camera pipeline, compression, noise level or blur shape changes the input distribution, and nothing in the pipeline detects such a shift; validation checks only structure, size and type.
+Instrument effects reach the model directly as pixel error. A different camera pipeline, compression, noise level or blur shape changes the input distribution. Nothing in the pipeline detects such a shift: validation checks only structure, size and type.
 
 ###### Environment
 
