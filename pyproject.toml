@@ -1,0 +1,37 @@
+[project]
+name = "nafnet-deblurring-pipeline"
+version = "0.1.0"
+description = "DIMER pipeline for NAFNet-GoPro-width32 image deblurring (megvii-research/NAFNet): digest-pinned checkpoint, verbatim upstream architecture, PSNR/SSIM evaluation against classical baselines, bounded restoration fine-tuning and a safetensors artifact"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = { file = "LICENSE" }
+authors = [{ name = "Kurt Valcorza" }]
+dependencies = [
+  "torch==2.14.0",
+  "numpy==2.5.3",
+  "pillow==11.3.0",
+  "safetensors==0.8.0",
+  "scikit-image==0.26.0",
+]
+[project.optional-dependencies]
+dev = ["pytest==8.4.2", "ruff==0.16.6"]
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+[tool.hatch.build.targets.wheel]
+packages = ["src/nafnet_deblurring_pipeline"]
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "tests"]
+addopts = "-q"
+# upstream arch_util.py (carried verbatim) uses ctx.saved_variables, deprecated but functional in torch 2.14
+filterwarnings = ["ignore:'saved_variables' is deprecated:DeprecationWarning"]
+
+[tool.ruff]
+line-length = 130
+target-version = "py312"
+src = ["src", "tests"]
+extend-exclude = ["tutorials", "third_party"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

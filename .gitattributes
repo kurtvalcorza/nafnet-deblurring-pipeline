@@ -1,0 +1,3 @@
+# Snapshot manifests and carried upstream source are digest-verified byte for byte; never convert their line endings.
+weights/** -text
+third_party/** -text
