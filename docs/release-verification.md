@@ -28,6 +28,32 @@ None of this is execution evidence for the real checkpoint (REL8).
 
 ## Recorded executions
 
+### 2026-10-04 — local CPU execution of the committed notebook at `31db8bb` (not a hosted Run all)
+
+- **Date:** 2026-10-04
+- **Subject:** `tutorials/nafnet_deblurring_colab.ipynb` at commit `31db8bb`, blob `9fd1ab250e96c97c89ba8cfce2df8b452627b587` (`source.json` revision label `d6e1d0b52bfe2ed92caae8cea6dbb5adcf0e0e73`, the parent commit; the carried files are those of `31db8bb`).
+- **Runtime:** development container, CPU only (4 cores, shared), no GPU. Kernel: CPython 3.12.12 with IPython 9.17.1. Stage environment: CPython 3.12.12 with `torch 2.14.0+cu130`, `numpy 2.5.3`, `pillow 11.3.0`, `safetensors 0.8.0`, `scikit-image 0.26.0` (the lock's pins; torch read from an existing local installation of the same wheel because of limited disk).
+- **Procedure:** all 11 code cells executed in order in one kernel namespace by a driver that sets form fields in a copy of each cell (EXE6): `STEPS = 60`, `RUN_ACTIVITY = True`, `ACTIVITY_SCOPE = 'decoder+middle'`, `USE_BYOD = True`, `BYOD_PATH` = a local paired archive, `BYOD_STEPS = 10`; every other field at its default. Forced deviations from a hosted run: (a) the install cell's `uv` download, `uv venv` and `uv pip install` lines were replaced by a pointer to the stage environment above (its `ENV`, version probe and `run_stage` ran verbatim); (b) the Section 1 disk requirement for the isolated environment was set to zero; (c) `huggingface.co` is unreachable, so a random-init full-width NAFNet in the upstream layout (`{'params': state_dict}`, 68,681,301 bytes) was staged, and the carried copy of `pipeline.py` and the carried manifest in the run directory were rewritten to pin its size and SHA-256 (`74189d84…`). The BYOD archive held five 256-px crops of other `scikit-image` photographs (`cell`, `coins`, `hubble_deep_field`, `moon`, `retina`) with seeded synthetic motion blur; it is not part of the repository.
+- **Observed result:** all 11 code cells completed in one pass with no restart; cell times 0.0, 0.0, 2.3, 4.5, 6.5, 24.5, 144.0, 17.9, 14.1, 147.8 and 30.1 s.
+  - Sections 1–3: `accelerator: none (CPU only)`; 13 carried files verified; stage environment Python 3.12.12, `cuda: False`, 38 locked packages; stand-in checkpoint verified, `fetched_on_this_run: False`; converted `model.safetensors` 664 tensors, 17,111,907 parameters, `max_abs_output_diff_vs_pth: 0.0`.
+  - Section 4: 48 training / 12 test pairs; training photographs `brick`, `camera`, `chelsea`, `coffee`, `grass`, `immunohistochemistry`; test photographs `astronaut`, `gravel`, `rocket`; `disjoint_sources: True`; blur lengths 9..21 px; all five refusal probes rejected, each naming its rule (for example `blurred is 256x256 px but sharp is 256x248 px; both images of a pair must have identical size`).
+  - Section 5: settings chosen on train — unsharp `sigma 3.0, amount 0.25`, Wiener `nsr 0.03`; test PSNR / SSIM — `identity` 23.32 dB / 0.6264, `unsharp` 23.37 / 0.6186, `wiener_oracle` 25.18 / 0.7134, stand-in `pretrained` 18.70 / 0.3246.
+  - Section 6: `decoder` scope, 1,322,307 trainable / 15,789,600 frozen / 17,111,907 total parameters, 256-px crops; training-batch PSNR 20.40 dB at step 25 and 22.05 dB at step 60; 132.7 s of training (2.2 s per step).
+  - Section 7 (fresh process, artifact verified first): `adapted` 22.70 dB / 0.5744; `adapted_vs_pretrained` +4.00 dB mean (min +2.12, max +6.05), 12 of 12 pairs improved; `adapted_vs_identity` −0.63 dB, 0 of 12 improved.
+  - Section 8 (second fresh process): `reload_parity` `max_abs_float_diff 0.0`, `uint8_equal_fraction 1.0` (tolerance `1e-05`); `text-synthetic` PSNR blurred input 25.35 dB, stand-in pretrained 19.57, adapted 25.05; `clock-real-motion` gradient-energy ratios only.
+  - Section 9 (activity, `decoder+middle`, 3,174,211 trainable parameters): 22.70 dB / 0.5753 against 22.70 dB / 0.5744 for the default scope; first logged losses −20.407 and −20.3995, showing that both runs started from the same weights.
+  - Section 10 (paired BYOD): 5 pairs validated, split 4 / 1 by image (test image `hubble_deep_field`); unsharp chosen on train `sigma 1.0, amount 0.25`; no oracle Wiener (kernels unknown); test PSNR `identity` 26.05 dB, `unsharp` 26.01, stand-in `pretrained` 23.36, `adapted` 24.30 after 10 steps; reload parity `0.0`; results, metrics CSV, restored image and artifact written.
+- **Caveats:** the `pretrained` and `adapted` numbers come from random weights and carry no information about NAFNet's quality; the run exercises the stage chain, validation and refusals, the classical baselines, bounded fine-tuning, artifact export, fresh-process reload and equivalence, new-image inference, the optional activity and the paired BYOD branch. The real-checkpoint path (mirror download, digest match, conversion of the real bytes) and the `uv` environment build were not executed. Not REL1/REL2 evidence.
+
+### 2026-10-04 — BYOD branches with the runner of `227730f`
+
+- **Date:** 2026-10-04
+- **Subject:** `tools/tutorial_stages.py` at commit `227730f` (the per-archive BYOD output directories), run against the run directory of the record above
+- **Runtime:** as above
+- **Procedure:** `tutorial_stages.py --stage byod` (the command `run_stage('byod', …)` issues) with three archives in sequence: the paired archive above with `--steps 10`, an unpaired archive (the real `clock_motion` photograph and one blurred crop), and a refused archive (`sharp/a.png` with `blurred/b.png`).
+- **Observed result:** paired — as above, written to `outputs/byod/paired-d78e02364f3e/`; unpaired — 2 images validated and deblurred by the stand-in pretrained model and the adapted sample artifact, gradient-energy ratios reported and no PSNR/SSIM, written to `outputs/byod/unpaired-c3bd7fe358f7/` while the paired directory remained; refused — the stage stopped with `BYOD: files without a partner (pairs are matched by file stem in sharp/ and blurred/): ['sharp/a.png', 'blurred/b.png']` before any model ran.
+- **Caveats:** stand-in weights; local CPU only; the Colab upload dialog (`BYOD_PATH` empty) was not exercised.
+
 ### 2026-10-04 — local CPU execution of a pre-commit build of the notebook (not a hosted Run all)
 
 - **Date:** 2026-10-04

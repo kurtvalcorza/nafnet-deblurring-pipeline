@@ -266,11 +266,11 @@ Beyond the out-of-scope uses above, the developers consider these uses unaccepta
 The tutorial is a release candidate. A static check (tests, validator, notebook parity) is not an execution and is not listed here.
 
 - **Date:** 2026-10-04
-- **Subject:** `tutorials/nafnet_deblurring_colab.ipynb`, a build generated before the first commit of this repository (`docs/release-verification.md` lists how it differs from the committed notebook)
+- **Subject:** `tutorials/nafnet_deblurring_colab.ipynb` at commit `31db8bb`
 - **Runtime:** CPU only (4 shared cores, no GPU), Python 3.12.12, `torch 2.14.0`, `numpy 2.5.3`, `safetensors 0.8.0`, `scikit-image 0.26.0`
-- **Procedure:** every code cell run in order in one kernel. Not a hosted `Run all`: the `uv` download and environment build were replaced by an equivalent pinned virtual environment because of limited disk, and the real checkpoint was replaced by a random-init full-width stand-in with its own digest because the mirror host was unreachable. `STEPS = 60` instead of 300.
-- **Observed result:** all 11 code cells completed in one pass; all five refusal probes were rejected; test PSNR/SSIM `identity` 23.32 dB / 0.6264, `unsharp` 23.37 dB / 0.6186, `wiener_oracle` 25.18 dB / 0.7134; the reloaded artifact reproduced the trained model's outputs with `max_abs_float_diff 0.0`.
-- **Caveats:** the `pretrained` and `adapted` values of this run come from random weights and say nothing about NAFNet; the real-checkpoint path (download, digest match, conversion of the real bytes) and the `uv` environment build were not executed.
+- **Procedure:** every code cell run in order in one kernel, with `STEPS = 60`, the optional activity (`decoder+middle`) and the paired bring-your-own-data branch switched on. Not a hosted `Run all`: the `uv` download and environment build were replaced by an equivalent pinned environment because of limited disk, and the real checkpoint was replaced by a random-init full-width stand-in with its own digest because the mirror host was unreachable.
+- **Observed result:** all 11 code cells completed in one pass; all five refusal probes were rejected; test PSNR/SSIM `identity` 23.32 dB / 0.6264, `unsharp` 23.37 dB / 0.6186, `wiener_oracle` 25.18 dB / 0.7134; the reloaded artifact reproduced the trained model's outputs with `max_abs_float_diff 0.0`; a refused bring-your-own-data archive stopped with a message naming the unmatched files.
+- **Caveats:** the `pretrained` and `adapted` values of this run come from random weights and say nothing about NAFNet; the real-checkpoint path (download, digest match, conversion of the real bytes) and the `uv` environment build were not executed. Full stage-by-stage records are in `docs/release-verification.md`.
 
 ## References
 
