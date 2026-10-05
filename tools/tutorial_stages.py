@@ -265,13 +265,16 @@ def stage_prepare(run: Run) -> None:
     """Section 4: build the pinned synthetic-blur sample, validate it, split it by photograph, probe the refusals."""
     import numpy as np
 
-    from nafnet_deblurring_pipeline import INPUT_SCHEMA, SAMPLE_IMAGES, dataset_manifest, validate_records
+    from nafnet_deblurring_pipeline import INPUT_SCHEMA, SAMPLE_IMAGES, dataset_manifest, sample_conversions, validate_records
 
     splits = load_sample(run)
+    conversions = sample_conversions()
     report = validate_records(splits["train"] + splits["test"])
     manifest = dataset_manifest(splits)
     print({"data_source": "scikit-image 0.26.0 sample photographs (public domain / CC0) + seeded synthetic motion blur", "train_pairs": len(splits["train"]), "test_pairs": len(splits["test"]), "crop_px": splits["train"][0]["blurred"].shape[0], "disjoint_sources": manifest["disjoint_sources"]}, flush=True)
     print({"train_sources": manifest["sources"]["train"], "test_sources": manifest["sources"]["test"]}, flush=True)
+    # the data contract promises a report of every colour conversion: the sample is held to it as BYOD is
+    print({"colour_conversions": {name: note for name, note in conversions.items() if note}, "already_rgb": [name for name, note in conversions.items() if not note]}, flush=True)
     lengths = [r["kernel"]["length_px"] for r in splits["train"] + splits["test"]]
     print({"blur_length_px_range": [min(lengths), max(lengths)], "noise_sigma": splits["train"][0]["noise_sigma"], "validation": {k: report[k] for k in ("records", "sources", "width_range", "height_range", "ceilings")}}, flush=True)
     print({"schema": INPUT_SCHEMA["record"], "validation_scope": INPUT_SCHEMA["validation"]}, flush=True)
@@ -295,14 +298,14 @@ def stage_prepare(run: Run) -> None:
         raise RuntimeError(f"a refusal probe was accepted: {refusals}")
     with (run.out / f"{STEM}_sample_pairs.csv").open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
-        writer.writerow(["id", "split", "source", "blur_length_px", "blur_angle_deg", "noise_sigma", "window_xywh", "source_license"])
+        writer.writerow(["id", "split", "source", "blur_length_px", "blur_angle_deg", "noise_sigma", "window_xywh", "source_license", "source_conversion"])
         for r in splits["train"] + splits["test"]:
-            writer.writerow([r["id"], r["split"], r["source"], r["kernel"]["length_px"], r["kernel"]["angle_deg"], r["noise_sigma"], r.get("window"), SAMPLE_IMAGES.get(r["source"], {}).get("license", "unknown")])
+            writer.writerow([r["id"], r["split"], r["source"], r["kernel"]["length_px"], r["kernel"]["angle_deg"], r["noise_sigma"], r.get("window"), SAMPLE_IMAGES.get(r["source"], {}).get("license", "unknown"), conversions.get(r["source"]) or "none"])
     show = [splits["train"][0], splits["train"][len(splits["train"]) // 2], splits["test"][0], splits["test"][len(splits["test"]) // 2]]
     sheet = panel_sheet([[r["blurred"], r["sharp"], np.repeat(np.repeat((r["kernel_array"] / r["kernel_array"].max() * 255).astype(np.uint8)[..., None], 3, axis=2), 8, axis=0).repeat(8, axis=1)] for r in show], ["blurred input", "sharp reference", "blur kernel (x8)"], run.out / f"{STEM}_sample_pairs.png", row_titles=[f"{r['split']}: {r['id']}" for r in show])
     print({"sample_sheet": str(sheet), "pairs_csv": str(run.out / f"{STEM}_sample_pairs.csv")}, flush=True)
     run.write_state("data.json", {"source": "sample", "dataset_digest": manifest["digest"], "counts": manifest["counts"]})
-    run.write_output("dataset.json", {"manifest": manifest, "validation": report, "refusal_probes": refusals})
+    run.write_output("dataset.json", {"manifest": manifest, "validation": report, "refusal_probes": refusals, "colour_conversions": conversions})
 
 
 def stage_baseline(run: Run) -> None:
