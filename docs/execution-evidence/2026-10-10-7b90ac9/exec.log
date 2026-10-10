@@ -1,0 +1,98 @@
+[colab] Parsing notebook '/home/kurt/colab-runs/nafnet-deblurring-pipeline-7b90ac9-fe50d6/nafnet_deblurring_colab_7b90ac9_colab-cli-t4.ipynb'...
+[colab] Executing cell 1/11 - Infrastructure: check the runtime, accelerator and disk; create or keep this session's run directory...
+{'accelerator': 'Tesla T4, 15360 MiB', 'kernel_python': '3.13.15', 'run_directory': '/content/outputs/nafnet_deblurring/8edc8f342590', 'weights': '/content/weights', 'environment': '/tmp/nafnet_deblurring_env_8062123fb5b2c159', 'free_gib': {'weights': 193.3, 'environment': 193.3}}
+[colab] Executing cell 2/11 - Infrastructure: write and verify the carried package, stage runner, lock and manifests...
+{'carried_files': 13, 'verified': True, 'repository': 'kurtvalcorza/nafnet-deblurring-pipeline', 'revision': '841c5fd88f3ee4b92c4117e8357318d9a87b4981', 'generator': 'build_notebook.py/3.0-nafnet'}
+[colab] Executing cell 3/11 - Infrastructure: install the locked runtime into an isolated environment and define the stage runner...
+{'notebook_source': '841c5fd88f3ee4b92c4117e8357318d9a87b4981', 'python': '3.12.12', 'torch': '2.14.0+cu130', 'numpy': '2.5.3', 'safetensors': '0.8.0', 'cuda': True, 'locked_packages': 38, 'environment': '/tmp/nafnet_deblurring_env_8062123fb5b2c159/venv', 'environment_reused': False, 'setup_seconds': 61}
+[colab] Executing cell 4/11 - Infrastructure: fetch, digest-verify and convert the pinned checkpoint...
+Running stage 'weights' in the isolated environment; log: /content/outputs/nafnet_deblurring/8edc8f342590/logs/weights.log
+{'model_id': 'megvii-research/NAFNet', 'variant': 'NAFNet-GoPro-width32', 'revision': '2b4af71ebe098a92a75910c233a3965a3e93ede4', 'license': 'MIT', 'file': 'NAFNet-GoPro-width32.pth', 'bytes': 68671121, 'sha256': '19394e6155d12ef6…'}
+{'checkpoint_verified': True, 'fetched_on_this_run': True, 'source': 'https://huggingface.co/nyanko7/nafnet-models/resolve/main/NAFNet-GoPro-width32.pth'}
+{'converted_to': 'model.safetensors', 'bytes': 68510388, 'sha256': '768444b5d1dde023b21564a541e3aeeac1c7c084ce9b91a8c0408709b05c2ef0', 'tensors': 664, 'parameters': 17111907, 'max_abs_output_diff_vs_pth': 0.0}
+{'stage': 'weights', 'status': 'ok', 'seconds': 14.6}
+[colab] Executing cell 5/11 - nafnet_deblurring-18...
+Running stage 'prepare' in the isolated environment; log: /content/outputs/nafnet_deblurring/8edc8f342590/logs/prepare.log
+{'data_source': 'scikit-image 0.26.0 sample photographs (public domain / CC0) + seeded synthetic motion blur', 'train_pairs': 48, 'test_pairs': 12, 'crop_px': 256, 'disjoint_sources': True}
+{'train_sources': ['brick', 'camera', 'chelsea', 'coffee', 'grass', 'immunohistochemistry'], 'test_sources': ['astronaut', 'gravel', 'rocket']}
+{'colour_conversions': {'brick': 'greyscale replicated to RGB', 'grass': 'greyscale replicated to RGB', 'camera': 'greyscale replicated to RGB', 'gravel': 'greyscale replicated to RGB', 'text': 'greyscale replicated to RGB', 'clock_motion': 'greyscale replicated to RGB'}, 'already_rgb': ['chelsea', 'coffee', 'immunohistochemistry', 'astronaut', 'rocket']}
+{'blur_length_px_range': [9.0, 21.0], 'noise_sigma': 0.01, 'validation': {'records': 60, 'sources': 9, 'width_range': [256, 256], 'height_range': [256, 256], 'ceilings': {'min_side': 64, 'max_side': 1024, 'max_images': 200, 'min_pairs': 4}}}
+{'schema': '{id, source, blurred, sharp} with blurred/sharp uint8 RGB arrays of identical shape H x W x 3 (sharp is None for unpaired inference)', 'validation_scope': 'structural only: nothing checks that a pair shows the same scene or that the blur is motion blur'}
+{'refusal_probe': 'pair sizes differ', 'result': "rejected: record 'probe-a': blurred is 256x256 px but sharp is 256x248 px; both images of a pair must have identical size"}
+{'refusal_probe': 'image too small', 'result': "rejected: record 'probe-b': blurred is 40x40 px; each side must be within 64..1024 px (resize or crop the image before supplying it)"}
+{'refusal_probe': 'duplicate id', 'result': "rejected: duplicate record id 'chelsea-00'; ids must be unique"}
+{'refusal_probe': 'single source', 'result': "rejected: all 4 pairs come from one source ('chelsea'); at least 2 distinct sources are needed so that the test split shares no photograph with training"}
+{'refusal_probe': 'greyscale array', 'result': "rejected: record 'probe-c': blurred must be H x W x 3 RGB, got shape (256, 256)"}
+{'sample_sheet': '/content/outputs/nafnet_deblurring/8edc8f342590/outputs/nafnet_deblurring_sample_pairs.png', 'pairs_csv': '/content/outputs/nafnet_deblurring/8edc8f342590/outputs/nafnet_deblurring_sample_pairs.csv'}
+{'stage': 'prepare', 'status': 'ok', 'seconds': 7.2}
+Sample pairs: blurred input, sharp reference and the blur kernel -> /content/outputs/nafnet_deblurring/8edc8f342590/outputs/nafnet_deblurring_sample_pairs.png
+<IPython.core.display.Image object>
+
+[Image saved to: /tmp/tmp5stfumk4.png]
+[colab] Executing cell 6/11 - nafnet_deblurring-21...
+Running stage 'baseline' in the isolated environment; log: /content/outputs/nafnet_deblurring/8edc8f342590/logs/baseline.log
+{'unsharp_chosen_on_train': {'sigma': 3.0, 'amount': 0.25}, 'wiener_oracle_chosen_on_train': {'nsr': 0.03}}
+{'method': 'identity', 'n': 12, 'psnr_db': 23.32, 'ssim': 0.6264}
+{'method': 'unsharp', 'n': 12, 'psnr_db': 23.37, 'ssim': 0.6186}
+{'method': 'wiener_oracle', 'n': 12, 'psnr_db': 25.18, 'ssim': 0.7134}
+{'method': 'pretrained', 'n': 12, 'psnr_db': 26.13, 'ssim': 0.7711}
+{'pretrained_vs_blurred_input': {'from': 'identity', 'to': 'pretrained', 'n': 12, 'psnr_gain_mean': 2.808, 'psnr_gain_min': -0.239, 'psnr_gain_max': 4.483, 'ssim_gain_mean': 0.145, 'records_improved_psnr': 11}}
+{'comparison_sheet': '/content/outputs/nafnet_deblurring/8edc8f342590/outputs/nafnet_deblurring_baselines.png', 'pretrained_inference_seconds_for_test_split': 0.74}
+{'stage': 'baseline', 'status': 'ok', 'seconds': 21.9}
+Test pairs: blurred input, unsharp, oracle Wiener, pretrained NAFNet and the sharp reference -> /content/outputs/nafnet_deblurring/8edc8f342590/outputs/nafnet_deblurring_baselines.png
+<IPython.core.display.Image object>
+
+[Image saved to: /tmp/tmpfh_elw5c.png]
+[colab] Executing cell 7/11 - nafnet_deblurring-24...
+Running stage 'adapt' in the isolated environment; log: /content/outputs/nafnet_deblurring/8edc8f342590/logs/adapt.log
+{'adaptation': 'gradient fine-tuning', 'scope': 'decoder', 'trainable_modules': ['ups', 'decoders', 'ending'], 'steps': 300, 'lr': 0.0001, 'batch_size': 4, 'seed': 0, 'device': 'cuda'}
+{'step': 25, 'loss': -25.6601, 'train_batch_psnr_db': 25.66, 'seconds': 5.0}
+{'step': 50, 'loss': -26.7476, 'train_batch_psnr_db': 26.75, 'seconds': 9.4}
+{'step': 75, 'loss': -26.8591, 'train_batch_psnr_db': 26.86, 'seconds': 13.9}
+{'step': 100, 'loss': -27.0327, 'train_batch_psnr_db': 27.03, 'seconds': 18.4}
+{'step': 125, 'loss': -26.2118, 'train_batch_psnr_db': 26.21, 'seconds': 22.9}
+{'step': 150, 'loss': -26.5507, 'train_batch_psnr_db': 26.55, 'seconds': 27.4}
+{'step': 175, 'loss': -26.8727, 'train_batch_psnr_db': 26.87, 'seconds': 32.0}
+{'step': 200, 'loss': -27.4211, 'train_batch_psnr_db': 27.42, 'seconds': 36.6}
+{'step': 225, 'loss': -27.0043, 'train_batch_psnr_db': 27.0, 'seconds': 41.2}
+{'step': 250, 'loss': -26.7345, 'train_batch_psnr_db': 26.73, 'seconds': 45.8}
+{'step': 275, 'loss': -27.3605, 'train_batch_psnr_db': 27.36, 'seconds': 50.4}
+{'step': 300, 'loss': -27.2005, 'train_batch_psnr_db': 27.2, 'seconds': 55.1}
+{'trainable_parameters': 1322307, 'frozen_parameters': 15789600, 'total_parameters': 17111907, 'patch': 256, 'seconds': 55.1}
+{'artifact': '/content/outputs/nafnet_deblurring/8edc8f342590/outputs/nafnet_deblurring_artifact', 'files': ['model.safetensors', 'manifest.json'], 'weights_bytes': 68510308, 'weights_sha256': '8d849bafeacdda1bd302120a56a7af97e19d0781025864f04ca14ae6cddbe969'}
+{'stage': 'adapt', 'status': 'ok', 'seconds': 70.8}
+[colab] Executing cell 8/11 - nafnet_deblurring-27...
+Running stage 'evaluate' in the isolated environment; log: /content/outputs/nafnet_deblurring/8edc8f342590/logs/evaluate.log
+{'method': 'identity', 'psnr_db': 23.32, 'ssim': 0.6264}
+{'method': 'unsharp', 'psnr_db': 23.37, 'ssim': 0.6186}
+{'method': 'wiener_oracle', 'psnr_db': 25.18, 'ssim': 0.7134}
+{'method': 'pretrained', 'psnr_db': 26.13, 'ssim': 0.7711}
+{'method': 'adapted', 'psnr_db': 26.36, 'ssim': 0.7881}
+{'adapted_vs_pretrained': {'from': 'pretrained', 'to': 'adapted', 'n': 12, 'psnr_gain_mean': 0.227, 'psnr_gain_min': -0.165, 'psnr_gain_max': 0.417, 'ssim_gain_mean': 0.017, 'records_improved_psnr': 11}}
+{'adapted_vs_identity': {'from': 'identity', 'to': 'adapted', 'n': 12, 'psnr_gain_mean': 3.035, 'psnr_gain_min': 0.079, 'psnr_gain_max': 4.755, 'ssim_gain_mean': 0.162, 'records_improved_psnr': 12}}
+{'adapted_vs_wiener_oracle': {'from': 'wiener_oracle', 'to': 'adapted', 'n': 12, 'psnr_gain_mean': 1.179, 'psnr_gain_min': -0.178, 'psnr_gain_max': 2.473, 'ssim_gain_mean': 0.075, 'records_improved_psnr': 11}}
+{'per_test_photograph': {'astronaut': {'n': 4, 'pretrained_psnr_db': 25.69, 'adapted_psnr_db': 26.02}, 'gravel': {'n': 4, 'pretrained_psnr_db': 23.59, 'adapted_psnr_db': 23.81}, 'rocket': {'n': 4, 'pretrained_psnr_db': 29.11, 'adapted_psnr_db': 29.25}}}
+{'comparison_sheet': '/content/outputs/nafnet_deblurring/8edc8f342590/outputs/nafnet_deblurring_evaluation.png', 'metrics_csv': '/content/outputs/nafnet_deblurring/8edc8f342590/outputs/nafnet_deblurring_test_metrics.csv'}
+{'stage': 'evaluate', 'status': 'ok', 'seconds': 12.3}
+Test pairs: classical baselines, pretrained, adapted and the sharp reference -> /content/outputs/nafnet_deblurring/8edc8f342590/outputs/nafnet_deblurring_evaluation.png
+<IPython.core.display.Image object>
+
+[Image saved to: /tmp/tmpjrcs19id.png]
+[colab] Executing cell 9/11 - nafnet_deblurring-30...
+Running stage 'reload' in the isolated environment; log: /content/outputs/nafnet_deblurring/8edc8f342590/logs/reload.log
+{'artifact_manifest_verified': True, 'format': 'dimer_nafnet_restoration_artifact', 'base_checkpoint_sha256': '19394e6155d12ef6…', 'weights_sha256': '8d849bafeacdda1b…'}
+{'reload_parity': {'records_compared': 2, 'max_abs_float_diff': 0.0, 'uint8_equal_fraction': 1.0, 'tolerance': 1e-05}}
+{'id': 'text-synthetic', 'kind': 'paired (synthetic blur, fixed kernel)', 'size': [172, 448], 'blurred_input_psnr_db': 25.35, 'blurred_input_ssim': 0.6409, 'pretrained_psnr_db': 30.91, 'pretrained_ssim': 0.8239, 'adapted_psnr_db': 31.29, 'adapted_ssim': 0.8344}
+{'id': 'clock-real-motion', 'kind': 'unpaired (real camera motion, no reference)', 'size': [300, 400], 'gradient_energy_ratio_pretrained': 1.081, 'gradient_energy_ratio_adapted': 0.807, 'note': 'no sharp reference: no PSNR/SSIM; the gradient-energy ratio is a sharpness proxy that noise and ringing also raise, not a quality score'}
+{'new_image_sheet': '/content/outputs/nafnet_deblurring/8edc8f342590/outputs/nafnet_deblurring_new_images.png'}
+{'outputs': ['dataset.json', 'nafnet_deblurring_adaptation.json', 'nafnet_deblurring_artifact', 'nafnet_deblurring_baseline_report.json', 'nafnet_deblurring_baselines.png', 'nafnet_deblurring_evaluation.png', 'nafnet_deblurring_evaluation_report.json', 'nafnet_deblurring_new_clock-real-motion_adapted.png', 'nafnet_deblurring_new_clock-real-motion_pretrained.png', 'nafnet_deblurring_new_image_predictions.csv', 'nafnet_deblurring_new_images.png', 'nafnet_deblurring_new_text-synthetic_adapted.png', 'nafnet_deblurring_new_text-synthetic_pretrained.png', 'nafnet_deblurring_result.json', 'nafnet_deblurring_sample_pairs.csv', 'nafnet_deblurring_sample_pairs.png', 'nafnet_deblurring_test_metrics.csv', 'weights.json']}
+{'stage': 'reload', 'status': 'ok', 'seconds': 11.5}
+New images: blurred input, pretrained, adapted and (if known) the sharp reference -> /content/outputs/nafnet_deblurring/8edc8f342590/outputs/nafnet_deblurring_new_images.png
+<IPython.core.display.Image object>
+
+[Image saved to: /tmp/tmp_hrqe1i0.png]
+[colab] Executing cell 10/11 - nafnet_deblurring-33...
+{'activity': 'skipped (optional)', 'to_run': 'set RUN_ACTIVITY = True and choose ACTIVITY_SCOPE, then run this cell'}
+[colab] Executing cell 11/11 - nafnet_deblurring-36...
+{'byod': 'skipped (optional)', 'to_run': 'set USE_BYOD = True; optionally set BYOD_PATH to a zip or directory already in the runtime'}
+[colab] Saving notebook with outputs to '/home/kurt/colab-runs/nafnet-deblurring-pipeline-7b90ac9-fe50d6/nafnet_deblurring_colab_7b90ac9_colab-cli-t4_output.ipynb'...
