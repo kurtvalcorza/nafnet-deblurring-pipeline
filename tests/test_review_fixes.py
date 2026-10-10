@@ -126,6 +126,7 @@ def _run_check_cell(namespace: dict, source: str | None = None) -> dict:
     return namespace
 
 
+@pytest.mark.skipif(sys.platform != "linux", reason="executes the Section 1/3 kernel cells, which refuse a non-Linux x86_64 runtime and run a POSIX venv/bin/python (Linux runtimes only)")
 def test_naf_m5_section1_rerun_keeps_the_run_directory(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(shutil, "disk_usage", lambda _path: types.SimpleNamespace(free=10**13))  # the disk check is not under test
@@ -138,6 +139,7 @@ def test_naf_m5_section1_rerun_keeps_the_run_directory(tmp_path: Path, monkeypat
     assert namespace["ROOT"] != first
 
 
+@pytest.mark.skipif(sys.platform != "linux", reason="executes the Section 1/3 kernel cells, which refuse a non-Linux x86_64 runtime and run a POSIX venv/bin/python (Linux runtimes only)")
 def test_naf_m5_environment_is_keyed_on_the_lock_not_the_run(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(shutil, "disk_usage", lambda _path: types.SimpleNamespace(free=10**13))  # the disk check is not under test
@@ -156,6 +158,7 @@ def _fake_ipython(monkeypatch) -> None:
     monkeypatch.setitem(sys.modules, "IPython.display", display)
 
 
+@pytest.mark.skipif(sys.platform != "linux", reason="executes the Section 1/3 kernel cells, which refuse a non-Linux x86_64 runtime and run a POSIX venv/bin/python (Linux runtimes only)")
 def test_naf_m5_install_cell_reuses_a_complete_environment_without_downloading(tmp_path: Path, monkeypatch) -> None:
     _fake_ipython(monkeypatch)
     install = next(c["source"] for c in _cells() if c["cell_type"] == "code" and c["source"].startswith("# @title Infrastructure: install the locked runtime"))
@@ -192,3 +195,18 @@ def test_naf_m5_run_stage_names_the_cells_to_rerun_when_the_run_directory_is_emp
         namespace["run_stage"]("prepare")
     troubleshooting = next(c["source"] for c in _cells() if c["source"].startswith("## Troubleshooting"))
     assert "run the three Infrastructure cells again in order (Sections 1, 2 and 3)" in troubleshooting
+
+
+def test_stage_processes_import_neither_ipython_nor_google() -> None:
+    """Stages run as `tutorial_stages.py` subprocesses in the isolated environment, which has neither IPython nor
+    google.colab: only kernel cells use them (`IPython.display` in the install cell, the BYOD upload dialog). A carried
+    module that imported either would fail on Colab; there is no worker and no google.colab stub to give a ModuleSpec."""
+    import re
+
+    carried = [ROOT / source for dest, source in TEMPLATE["carried"].items() if dest.endswith(".py")]
+    assert any(path.name == "tutorial_stages.py" for path in carried)
+    offenders = [str(path) for path in carried if re.search(r"^\s*(from|import)\s+(IPython|google)\b", path.read_text(encoding="utf-8"), re.M)]
+    assert not offenders, offenders
+    sources = "\n".join("".join(cell["source"]) for cell in json.loads(NOTEBOOK.read_text(encoding="utf-8"))["cells"])
+    stubs = ("sys.modules['google", 'sys.modules["google', "ModuleType('google", 'ModuleType("google')
+    assert not [marker for marker in stubs if marker in sources]
