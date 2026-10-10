@@ -78,7 +78,7 @@ The notebook installs nothing into its own kernel. It downloads a pinned `uv` wh
 
 ## Release status
 
-**Candidate** — initial development. The notebook and the package pass the offline suite and the static validator, and the stage chain has been executed on a CPU with a random-init stand-in checkpoint, and a fresh Google Colab T4 runtime completed `Run all` with the real checkpoint in one pass on 2026-10-04: the mirror served the pinned bytes, and on the 12-pair test split PSNR went from 23.32 dB (blurred input) to 26.13 dB (pretrained) and 26.36 dB (adapted). The hosted BYOD journey and the pin of the converted safetensors digest are still open. See `STATUS.md` and `docs/release-verification.md`.
+**Candidate** — initial development. The notebook and the package pass the offline suite and the static validator, and the stage chain has been executed on a CPU with a random-init stand-in checkpoint, and a fresh Google Colab T4 runtime completed `Run all` with the real checkpoint in one pass on 2026-10-04: the mirror served the pinned bytes, and on the 12-pair test split PSNR went from 23.32 dB (blurred input) to 26.13 dB (pretrained) and 26.36 dB (adapted). A one-pass default `Run all` of the review-fix blob `3c99755` on a fresh Colab T4 session on 2026-10-10 reproduced every number. The hosted BYOD journey and the pin of the converted safetensors digest are still open. See `STATUS.md` and `docs/release-verification.md`.
 
 ## Licensing
 

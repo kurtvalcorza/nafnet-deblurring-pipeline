@@ -113,6 +113,17 @@ def to_rgb(image: Image.Image) -> tuple[np.ndarray, str | None]:
 
 def load_sample_image(name: str, data_dir: Path | None = None) -> np.ndarray:
     """One pinned sample photograph as a uint8 RGB array; refused on any byte-size or SHA-256 mismatch."""
+    return load_sample_image_with_note(name, data_dir)[0]
+
+
+def sample_conversions(data_dir: Path | None = None) -> dict[str, str | None]:
+    """``{photograph: colour conversion}`` for every pinned sample photograph (None when the file is already RGB): the
+    report the data contract promises for the sample, as BYOD reports it for the reader's images."""
+    return {name: load_sample_image_with_note(name, data_dir)[1] for name in SAMPLE_IMAGES}
+
+
+def load_sample_image_with_note(name: str, data_dir: Path | None = None) -> tuple[np.ndarray, str | None]:
+    """``load_sample_image`` plus the note naming any colour conversion (for example greyscale replicated to RGB)."""
     entry = SAMPLE_IMAGES[name]
     path = (data_dir or skimage_data_dir()) / entry["file"]
     if not path.is_file():
@@ -121,8 +132,7 @@ def load_sample_image(name: str, data_dir: Path | None = None) -> np.ndarray:
     if len(data) != entry["bytes"] or sha256_bytes(data) != entry["sha256"]:
         raise ValueError(f"sample photograph {entry['file']}: {len(data)} bytes with sha256 {sha256_bytes(data)[:16]}… != pinned {entry['bytes']} bytes / {entry['sha256'][:16]}…")
     with Image.open(io.BytesIO(data)) as image:
-        array, _note = to_rgb(image)
-    return array
+        return to_rgb(image)
 
 
 # --------------------------------------------------------------------------------------------------

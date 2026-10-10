@@ -44,8 +44,10 @@ TEMPLATE = {
         "the test pairs with PSNR and SSIM; fine-tunes the decoder half of the network for 300 steps; scores the exported safetensors artifact "
         "in a fresh process beside every baseline; reloads it in a second fresh process and checks that it reproduces the trained model; and "
         "deblurs two new images. The default path needs no repository clone, no DIMER worker or service, no credential, no upload dialog, no "
-        "configuration edit and no runtime restart (NOTEBOOK_SPEC 2.2 §5). Its duration on a T4 has not been recorded yet; see the Prerequisites "
-        "for what has been measured."
+        "configuration edit and no runtime restart (NOTEBOOK_SPEC 2.2 §5). The recorded hosted run (Google Colab, Tesla T4, 4 October 2026, "
+        "default settings, notebook generated from revision `31db8bb`) built the isolated environment in 66 s and spent about 136 s in the model "
+        "stages; the Prerequisites give the per-stage times. A second **Run all** in the same runtime reuses that environment instead of "
+        "building another."
     ),
     "byod": (
         "After the canonical path completes, set `USE_BYOD = True` in Section 10 to run the same stages on your own images, supplied as a zip "
@@ -121,8 +123,8 @@ TEMPLATE = {
         "repository exposes none of these."
     ),
     "prerequisites": [
-        "- **Runtime:** a fresh supported **Linux x86_64** runtime — Google Colab or Kaggle with a **T4 GPU** is the documented runtime; a CPU-only runtime also completes. The kernel's own Python version does not matter: the notebook installs nothing into it and runs every stage with CPython 3.12.12 in an isolated environment built from {n_locked} hash-locked packages (torch 2.14.0, whose Linux wheel is the CUDA 13.0 build and also runs on a CPU). Everything runs in float32; cuDNN is set to deterministic kernels. About 9 GB of disk is needed for the isolated environment and 0.2 GB for the checkpoint and its converted copy.",
-        "- **Measured timings (estimates for your runtime):** no hosted T4 run of this notebook has been recorded yet. On the 4-core CPU container used during development, measured while it was otherwise idle, one fine-tuning step at the defaults (batch 4, 256 × 256 crops, decoder scope) of a full-width network took about 2.3 s, so the 300-step fine-tuning would take roughly 12 minutes on a comparable CPU and the optional activity as long again; a T4 is expected to be much faster. Treat these as estimates, not measurements of your run.",
+        "- **Runtime:** a fresh supported **Linux x86_64** runtime — Google Colab or Kaggle with a **T4 GPU** is the documented runtime; a CPU-only runtime also completes. The kernel's own Python version does not matter: the notebook installs nothing into it and runs every stage with CPython 3.12.12 in an isolated environment built from {n_locked} hash-locked packages (torch 2.14.0, whose Linux wheel is the CUDA 13.0 build and also runs on a CPU). Everything runs in float32; cuDNN is set to deterministic kernels. About 0.2 GB of disk is needed for the checkpoint and its converted copy. The Section 1 check asks for 9 GB for the isolated environment: an estimate for the CUDA build of torch and its NVIDIA libraries plus `uv`'s download cache, not a measurement.",
+        "- **Measured timings:** in the recorded hosted run (Google Colab, Tesla T4, 4 October 2026, default settings, notebook generated from revision `31db8bb`; see `docs/release-verification.md`) the isolated environment was built in 66 s, and the stages took: checkpoint 13.5 s, sample 6.2 s, baselines 22.3 s, fine-tuning 70.8 s (54.9 s of training, about 0.18 s per step), evaluation 12.3 s and reload 11.3 s. On a CPU-only runtime fine-tuning is much slower: on the 4-core CPU container used during development (an estimate from that container, not a hosted run) one step at the defaults took about 2.3 s, so the 300 steps would take roughly 12 minutes and the optional activity as long again. Your runtime's times will differ.",
         "- **Knowledge:** basic Python and NumPy arrays (H × W × 3, uint8); what a convolution does; the idea of training by gradient descent and of a held-out test set. Image-restoration terms are explained where they are first used and collected in the glossary.",
         "- **Weights and trust boundary:** the upstream checkpoint is a PyTorch pickle (`.pth`). The notebook refuses it unless its size and SHA-256 equal the pinned values, reads it once with `torch.load(..., weights_only=True)` (tensors and plain containers only) and converts it to safetensors; every later stage loads the safetensors file. The pinned SHA-256 comes from third-party records of the upstream Google Drive file, not from the authors; `docs/WEIGHTS.md` in the repository explains that chain and its residual trust gap. No code from the Hugging Face mirror is executed: the architecture is the upstream source carried verbatim in Section 2. NAFNet is MIT-licensed; its BasicSR-derived parts are Apache-2.0.",
         "- **Data contract:** a record is `{{id, source, blurred, sharp}}` — two uint8 RGB arrays of identical size, each side 64..1024 px (larger images are refused, never resized silently); `source` groups the crops of one photograph so the split can keep them together. Greyscale is replicated to three channels and alpha is dropped, and both are reported. Validation is structural: it cannot tell whether a pair shows the same scene.",
@@ -140,8 +142,9 @@ TEMPLATE = {
                 "give the details.\n\n"
                 "**Running it.** In Colab, choose *Runtime → Change runtime type → T4 GPU*, then *Runtime → Run all*. The default path needs no "
                 "edit, no upload, no account, no token and no runtime restart. Sections 1–3 build an isolated environment from hash-locked "
-                "packages and fetch the checkpoint, so they take the longest before any model runs; read ahead while they finish, or run the "
-                "notebook one cell at a time with *Shift + Enter*.\n\n"
+                "packages and fetch the checkpoint before any model runs (about 80 s in the recorded T4 run; a later Run all in the same runtime "
+                "reuses the environment); read ahead while they finish, or run the notebook one cell at a time with *Shift + Enter*. Re-running "
+                "the Section 1 cell on its own is safe: it keeps this session's run directory, so the cells after it keep working.\n\n"
                 "**Where the code runs.** The notebook kernel installs nothing and imports no model library. Each learner cell calls "
                 "`run_stage('…')`, which runs one stage of the carried stage runner in its own process with the isolated environment's Python, "
                 "streams what it prints, and stops the notebook with the stage's own error message if it fails. Stages hand results to each "
@@ -154,7 +157,8 @@ TEMPLATE = {
                 "with *Show code* if you are curious.\n\n"
                 "**Form controls.** Some learner cells start with fields that Colab renders as a form: `STEPS`, `LEARNING_RATE`, `BATCH_SIZE` and "
                 "`TRAINABLE_SCOPE` (Section 6); `RUN_ACTIVITY` and `ACTIVITY_SCOPE` (Section 9); and `USE_BYOD`, `BYOD_PATH` and `BYOD_STEPS` "
-                "(Section 10). Leave them at their defaults for the first run: the notes and sample answers describe the default path.\n\n"
+                "(Section 10). The Section 1 infrastructure cell has one more, `NEW_RUN_DIRECTORY`, off by default. Leave them at their defaults "
+                "for the first run: the notes and sample answers describe the default path.\n\n"
                 "**Section tags.** Each numbered heading carries one tag. **[Concept]** — what the model does and why. **[Evaluation practice]** — "
                 "how the evidence is produced and how to read it. **[Engineering]** — reproducibility, provenance and packaging.\n\n"
                 "**Predict, then check.** Before each principal result a **Predict before running** prompt asks you to commit to an expectation; "
@@ -232,9 +236,10 @@ TEMPLATE = {
                 "> **Infrastructure.** The code cells in Sections 1–3 are collapsed. You may run them without studying their implementation; they "
                 "exist for reproducibility and provenance. The learning activities start in Section 4.\n\n"
                 "**Input:** a fresh hosted runtime. **System:** checks that it is Linux x86_64 with enough free disk, reports whether a CUDA GPU is "
-                "present, and creates a new run directory. **Output:** the accelerator and the directories this run will use. Each run writes to a "
-                "new directory under `outputs/{stem}/`, so an earlier export cannot be mistaken for a current result. The verified checkpoint is "
-                "kept in `weights/` and reused by a later run."
+                "present, and creates a run directory. **Output:** the accelerator and the directories this run will use. Each new session writes "
+                "to a new directory under `outputs/{stem}/`, so an earlier export cannot be mistaken for a current result. Running this cell again "
+                "in the same session keeps that directory (the cells after it keep working); tick `NEW_RUN_DIRECTORY` for a fresh one, then run "
+                "Sections 2 and 3 again. The verified checkpoint is kept in `weights/` and reused by a later run."
             ),
             "after": (
                 "**Expected result:** one dictionary naming the accelerator (for example `Tesla T4, 15360 MiB`, or `none (CPU only)` with a note "
@@ -270,14 +275,15 @@ TEMPLATE = {
         {
             "cell": "install",
             "md": (
-                "**Infrastructure: the isolated environment.** Installation messages from `uv` are normal and can take a few minutes (the torch "
-                "wheel and its CUDA libraries are several GB). A failed download or a hash mismatch stops the cell; never remove a pin or a hash to "
-                "get past one."
+                "**Infrastructure: the isolated environment.** Installation messages from `uv` are normal; the build took 66 s in the recorded T4 "
+                "run (the torch wheel and its CUDA libraries are several GB) and can take longer on a slower network. If an environment built from "
+                "the same lock already exists in this runtime (a second Run all), the cell reuses it and prints `environment_reused: True`. A "
+                "failed download or a hash mismatch stops the cell; never remove a pin or a hash to get past one."
             ),
             "after": (
                 "**Expected result:** one dictionary with the generating revision, the isolated environment's Python (3.12.12), the `torch`, "
                 "`numpy` and `safetensors` versions, `'cuda': True` on a GPU runtime (`False` on a CPU-only runtime, with a note), the number of "
-                "locked packages and the setup time."
+                "locked packages, whether an existing environment was reused, and the setup time."
             ),
         },
         {
@@ -315,12 +321,19 @@ TEMPLATE = {
                 "photograph is blurred before a 256 × 256 crop is cut from the blurred and the sharp version at the same place, so the crop has no "
                 "border artefact. Every kernel, noise draw and crop position comes from one seeded generator, so every run builds the same 60 "
                 "pairs: 8 crops from each of six training photographs (48 pairs) and 4 from each of three test photographs (12 pairs).\n\n"
+                "**Four of the nine photographs are greyscale.** `brick`, `grass` and `camera` (three of the six training photographs, so 24 of the "
+                "48 training pairs) and `gravel` (one of the three test photographs, 4 of the 12 test pairs) are single-channel files; the loader "
+                "replicates the grey channel into R, G and B and the stage reports each conversion. In those pairs the three colour channels are "
+                "identical, so half of the fine-tuning data teaches the network nothing about colour: read the adaptation result as a fit to this "
+                "mix of grey and colour photographs, not to colour photographs alone. Both new images in Section 8 (`text` and `clock_motion`) are "
+                "greyscale too.\n\n"
                 "**Why split by photograph?** Crops of one photograph share content, lighting and texture. If some crops of the astronaut were in "
                 "training and others in test, the test score would partly measure memory of the scene. `dataset_manifest` checks that no "
                 "photograph appears on both sides and records a digest that every later stage re-checks.\n\n"
                 "**Validation** checks each record's structure before any model sees it; a **refusal probe** is a deliberately broken input used to "
                 "show that the check works.\n\n"
-                "**Expected result:** 48 / 12 pairs, the training and test photographs listed separately, blur lengths between 9 and 21 px, five "
+                "**Expected result:** 48 / 12 pairs, the training and test photographs listed separately, the colour conversions (six greyscale "
+                "photographs replicated to RGB: four sample sources and the two new images), blur lengths between 9 and 21 px, five "
                 "refusal probes each `rejected` with a message naming the record and the rule, and a sample sheet showing blurred inputs, sharp "
                 "references and their kernels."
             ),
@@ -461,8 +474,9 @@ TEMPLATE = {
                 "*c* dB for the blurred input and *d* dB for the oracle Wiener filter\". It does not tell you how the model behaves on real camera "
                 "blur, defocus or other noise levels, because the adaptation targeted exactly this synthetic distribution — gains here can come with "
                 "losses on GoPro-like blur, which this notebook does not measure. It is one seeded run with no spread estimate; another seed would "
-                "move the numbers a little. A photograph dominated by fine random texture (gravel) is the hardest to restore and often gains least, "
-                "but read your own per-photograph line rather than assuming it.\n\n"
+                "move the numbers a little. Which photograph gains least is not predictable from its content alone: read your own per-photograph line. "
+                "In the recorded T4 run the rocket, already the sharpest-scoring test photograph, gained least (about +0.14 dB), ahead of gravel "
+                "(+0.22) and the astronaut (+0.33); with gains this small, one seed could reorder them.\n\n"
                 "</details>"
             ),
         },
@@ -477,8 +491,8 @@ TEMPLATE = {
                 "largest difference is at most 1e-5. *Loading* a file only shows that it parses; matching outputs show that the file reproduces "
                 "the model.\n\n"
                 "Then both the pretrained and the reloaded adapted network deblur two images that played no part in adaptation or evaluation: "
-                "`text-synthetic`, a printed-text image blurred with one fixed kernel (15 px at 30°), which has a sharp reference and so gets PSNR "
-                "and SSIM; and `clock-real-motion`, a real photograph of a wall clock taken while moving the camera, which has **no** sharp reference. "
+                "`text-synthetic`, a greyscale photograph of handwritten formulae on paper blurred with one fixed kernel (15 px at 30°), which has a sharp reference and so gets PSNR "
+                "and SSIM; and `clock-real-motion`, a real greyscale photograph of a wall clock taken while moving the camera, which has **no** sharp reference. "
                 "For it the stage reports only a *gradient-energy ratio* (how much stronger the restored image's edges are than the input's) — a "
                 "sharpness proxy that noise and ringing also raise, never a quality score. Finally it writes `outputs/{stem}_result.json` with the "
                 "provenance, the runtime versions, the evaluation table and the reload check, and lists every file in `outputs/`.\n\n"
@@ -498,6 +512,9 @@ TEMPLATE = {
                 "**What to notice:** the text image's PSNR for the blurred input, the pretrained and the adapted network — one image, so a sanity "
                 "check, not an evaluation — and the clock photograph, where you must judge by eye. The real clock blur was not made by a straight-"
                 "line kernel; compare how the pretrained (trained on real camera blur) and the adapted network (tuned to synthetic lines) handle it. "
+                "A gradient-energy ratio **below 1** means the output has *less* edge energy than the blurred input — it is smoother. The recorded "
+                "T4 run gave about 1.08 for the pretrained and about 0.81 for the adapted network on the clock: consistent with a model tuned to "
+                "straight-line blur under-correcting, or smoothing, real camera blur, but still not a quality score. Read your own ratios. "
                 "This is the end of the canonical path; everything it produced is in `outputs/`.\n\n"
                 "**Checkpoint:** why is there no PSNR for the clock photograph, and why would a higher gradient-energy ratio not prove that one "
                 "model restored it better?\n\n"
@@ -520,7 +537,7 @@ TEMPLATE = {
                 "Section 6 result. It exports no artifact. On a CPU-only runtime it takes as long as Section 6 or longer.\n\n"
                 "**Change one thing:** set `ACTIVITY_SCOPE` to `all` (all 17.1 M parameters) or `decoder+middle` (adds the middle block, 3.2 M "
                 "trainable in total) and `RUN_ACTIVITY = True`, then run the cell.\n\n"
-                "**Predict before running:** with sixteen times as many trainable parameters (`all`), will the held-out PSNR be higher, about the "
+                "**Predict before running:** with about thirteen times as many trainable parameters (`all`: 17,111,907 against 1,322,307 for the decoder), will the held-out PSNR be higher, about the "
                 "same, or lower than with the decoder alone? Will training take much longer? Write your prediction down."
             ),
             "code": (
@@ -574,7 +591,8 @@ TEMPLATE = {
                 "is no reference.\n\n"
                 "**Privacy:** your files stay in this runtime and are sent nowhere. Do not upload confidential, personal or regulated images unless "
                 "you are authorized to process them in this environment. Leave `BYOD_PATH` empty to get the Colab upload dialog; set it to a path to "
-                "skip the dialog (it works outside Colab too)."
+                "skip the dialog (it works outside Colab too). The dialog takes **exactly one `.zip` file**: zip your folder first rather than "
+                "selecting the images themselves; a cancelled dialog or several files stop the cell with that rule."
             ),
             "code": (
                 'from pathlib import Path\n\n'
@@ -587,6 +605,8 @@ TEMPLATE = {
                 '    else:\n'
                 '        from google.colab import files\n'
                 '        uploaded = files.upload()\n'
+                '        if len(uploaded) != 1:\n'
+                "            raise ValueError(f'Upload exactly one .zip file (received {{len(uploaded)}} files): zip a folder with sharp/ and blurred/, or a folder of images, first. Or set BYOD_PATH to a zip or directory already in this runtime.')\n"
                 '        file_name, payload = next(iter(uploaded.items()))\n'
                 "        byod_path = ROOT / 'byod_upload' / Path(file_name).name\n"
                 '        byod_path.parent.mkdir(parents=True, exist_ok=True)\n'
@@ -612,7 +632,9 @@ TEMPLATE = {
                 "|---|---|---|\n"
                 "| Section 1 prints `No CUDA GPU detected` | the runtime has no GPU | The notebook still completes on the CPU, more slowly. For the documented runtime choose *Runtime → Change runtime type → T4 GPU* and run all again from the top. If Colab offers no GPU, your quota may be exhausted. |\n"
                 "| Section 1 stops with `This notebook needs a Linux x86_64 runtime` | a local Windows or macOS kernel, or an ARM machine | Use Google Colab, Kaggle, or a Linux x86_64 machine: the locked environment is built for manylinux x86_64 wheels. |\n"
-                "| Section 1 stops with `Not enough free disk` | the isolated environment needs about 9 GB | Start a fresh runtime with more free disk. |\n"
+                "| Section 1 stops with `Not enough free disk` | the check asks for about 9 GB for the isolated environment (an estimate) | Start a fresh runtime with more free disk; an environment built from the same lock earlier in this runtime is reused and needs no more. |\n"
+                "| `The run directory … has no carried files, or the isolated environment is gone: run the three Infrastructure cells again in order (Sections 1, 2 and 3)` | Section 1 was run with `NEW_RUN_DIRECTORY` ticked (a fresh, empty run directory), or the runtime's temporary directory was cleared | Run Sections 1, 2 and 3 again in order, then the cell you wanted, or choose *Runtime → Run all*. Re-running the Section 1 cell on its own with the default setting keeps the run directory and needs nothing else. |\n"
+                "| `Upload exactly one .zip file` with `USE_BYOD = True` | the upload dialog was cancelled, or several files were selected | Zip your folder first and upload that one file, or set `BYOD_PATH`. |\n"
                 "| `Carried file integrity failure` in Section 2, or `carried upstream file … sha256 … != pinned` in a stage | a carried file was edited | Do not edit the infrastructure cells; open a fresh copy of the notebook from the repository. |\n"
                 "| `uv 0.12.15 wheel size/hash mismatch`, or a `URLError` / timeout while downloading it | a network failure or an unexpected response from PyPI | Re-run the Section 2 install cell. Never replace the pinned URL or digest. |\n"
                 "| `CalledProcessError` from `uv venv` or `uv pip install` (a hash mismatch, `Failed to download`, HTTP 5xx) | a transient PyPI or network failure | Re-run the Section 2 install cell: `uv` reuses what it already downloaded. If a hash mismatch repeats, stop and report it — never remove `--require-hashes`, a pin or a hash. |\n"

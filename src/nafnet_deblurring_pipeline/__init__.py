@@ -52,6 +52,7 @@ from .samples import (
     degrade,
     motion_kernel,
     read_byod,
+    sample_conversions,
     split_by_source,
     validate_records,
 )
@@ -93,6 +94,7 @@ __all__ = [
     "paired_difference",
     "psnr",
     "read_byod",
+    "sample_conversions",
     "score",
     "split_by_source",
     "ssim",

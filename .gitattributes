@@ -1,3 +1,6 @@
 # Snapshot manifests and carried upstream source are digest-verified byte for byte; never convert their line endings.
 weights/** -text
 third_party/** -text
+
+# Execution evidence is recorded byte-for-byte (SHA-256 cited in docs/release-verification.md); never convert its line endings.
+docs/execution-evidence/** -text

@@ -28,6 +28,23 @@ None of this is execution evidence for the real checkpoint (REL8).
 
 ## Recorded executions
 
+### 2026-10-10 — Google Colab T4, default `Run all` of the review-fix blob `3c99755`
+
+- **Date:** 2026-10-10 (session started 01:20 UTC).
+- **Subject:** `tutorials/nafnet_deblurring_colab.ipynb`, blob `3c997553468039add000280cc899ade717760109` at commit `7b90ac9` (branch `ccr-24656dfc-ax1ln2`; the NAF-m1..m5 fixes; `source.json` revision label `841c5fd`, the review commit, while the carried files are those of the fix commit `7cad65b` and are checked by content). The runner verified the fetched notebook against that blob before execution and that the input was unchanged after it.
+- **Evidence:** `docs/execution-evidence/2026-10-10-7b90ac9/` — the executed notebook `nafnet_deblurring_colab_7b90ac9_colab-cli-t4_output.ipynb` (SHA-256 `39dd5d1b…4c5652`), `exec.log` (`8647f6cd…acd24`) and `run_summary.json` (`a9e0d47b…797c5`), committed byte for byte (`-text`).
+- **Runtime:** a fresh Google Colab session, Tesla T4 (15,360 MiB), kernel CPython 3.13.15, executed with the Colab CLI (`colab exec -f`: every code cell in order in one kernel; not a browser Run all, so there are no execution counts and the order comes from `exec.log`). Stage environment built by the notebook: CPython 3.12.12 managed by `uv`, the 38-package lock, `torch 2.14.0+cu130` with CUDA; built in 61 s (`environment_reused: False`).
+- **Procedure:** default settings, no field edited (`STEPS = 300`, `RUN_ACTIVITY = False`, `USE_BYOD = False`).
+- **Observed result:** all 11 code cells completed in one pass with no error output and no restart, credential or upload dialog (wall time 238.5 s including the environment build).
+  - Section 3: `fetched_on_this_run: True`, `checkpoint_verified: True` from the first mirror; converted `model.safetensors` 68,510,388 bytes, SHA-256 `768444b5…2ef0`, the same digest as the 2026-10-04 run and as a CPU conversion in a lock-only virtual environment on 2026-10-10 (14.6 s).
+  - Section 4: 48 training / 12 test pairs; the six greyscale-to-RGB conversions (`brick`, `grass`, `camera`, `gravel`, `text`, `clock_motion`) printed (NAF-m2) (7.2 s).
+  - Section 5: `identity` 23.32 dB / 0.6264, `unsharp` 23.37 / 0.6186, `wiener_oracle` 25.18 / 0.7134, `pretrained` 26.13 / 0.7711; pretrained beat the blurred input on 11 of 12 pairs (+2.81 dB mean) (21.9 s).
+  - Section 6: `decoder` scope, 1,322,307 trainable parameters, 300 steps on CUDA in 55.1 s; artifact weights SHA-256 `8d849baf…e969`, identical to the 2026-10-04 run (70.8 s).
+  - Section 7: `adapted` 26.36 dB / 0.7881; `adapted_vs_pretrained` +0.227 dB mean (min −0.165, max +0.417), 11 of 12 pairs improved; per test photograph `astronaut` +0.33, `gravel` +0.22, `rocket` +0.14 dB (12.3 s).
+  - Section 8: manifest verified; `reload_parity` `max_abs_float_diff 0.0`, `uint8_equal_fraction 1.0`; `text-synthetic` 25.35 / 30.91 / 31.29 dB; `clock-real-motion` gradient-energy ratio 1.081 pretrained, 0.807 adapted (11.5 s).
+  - Every number the notebook's worked answers quote (Sections 7–9) matches this run.
+- **Caveats:** one seeded run on one 12-pair test split. The optional activity, the BYOD branch (REL12, including the upload dialog) and the Section 1 re-run / second `Run all` in the same runtime (NAF-m5) were not run on a hosted runtime. The status stays Candidate (REL14).
+
 ### 2026-10-04 — Google Colab T4, default `Run all` with the real checkpoint
 
 - **Date:** 2026-10-04
