@@ -9,7 +9,7 @@ authors = [{ name = "Kurt Valcorza" }]
 dependencies = [
   "torch==2.14.0",
   "numpy==2.5.3",
-  "pillow==11.3.0",
+  "pillow==13.0.0",
   "safetensors==0.8.0",
   "scikit-image==0.26.0",
 ]
