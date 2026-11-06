@@ -9,7 +9,7 @@ DIMER-oriented pipeline for **NAFNet-GoPro-width32** single-image deblurring (`m
 - Checkpoint: `NAFNet-GoPro-width32.pth`, 68,671,121 bytes, SHA-256 `19394e6155d12ef6371d1d57496f87f0ec88f92bdffa27c0792690722d5d1a5c`, fetched from a public Hugging Face mirror and refused unless both match; `docs/WEIGHTS.md` records the provenance chain and its residual trust gap
 - Licence: **MIT** for NAFNet (code and weights); **Apache-2.0** for the BasicSR-derived parts, including the carried `arch_util.py`
 - Upstream task: image restoration (deblurring) — blurred RGB image in, restored RGB image of the same size out
-- Runtime: `torch==2.14.0`, `numpy==2.5.3`, `pillow==11.3.0`, `safetensors==0.8.0`, `scikit-image==0.26.0` (the last only as the carrier of the pinned sample photographs)
+- Runtime: `torch==2.14.0`, `numpy==2.5.3`, `pillow==13.0.0`, `safetensors==0.8.0`, `scikit-image==0.26.0` (the last only as the carrier of the pinned sample photographs)
 - Repository adaptation: **E2E** — bounded gradient fine-tuning of a parameter subset (default: the decoder half, 1,322,307 of 17,111,907 parameters), exported as a full safetensors state dict with a manifest
 
 ## Two things to know before you start
@@ -59,7 +59,7 @@ A paired record is `{id, source, blurred, sharp}`: two uint8 RGB arrays of ident
 
 ```
 pip install torch==2.14.0 --index-url https://download.pytorch.org/whl/cpu
-pip install numpy==2.5.3 pillow==11.3.0 safetensors==0.8.0 scikit-image==0.26.0 pytest==8.4.2 ruff==0.16.6
+pip install numpy==2.5.3 pillow==13.0.0 safetensors==0.8.0 scikit-image==0.26.0 pytest==8.4.2 ruff==0.16.6
 pip install -e . --no-deps
 pytest
 python tools/validate_release_assets.py
